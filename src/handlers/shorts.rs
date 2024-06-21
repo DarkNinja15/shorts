@@ -10,7 +10,17 @@ use crate::db::DbPool;
 use crate::utils::{get_uid, Claims};
 
 
-pub async fn get_shorts(){}
+pub async fn get_shorts(Extension(pool):Extension<Arc<DbPool>>)->Result<impl IntoResponse, StatusCode>{
+    let mut conn=pool.get().expect("Failed to get database connection from pool");
+
+    let result=shorts.load::<crate::models::shorts::Shorts>(&mut conn).map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({"error":"Unable to fetch shorts from db."}))));
+
+    if let Err((code,json))=result{
+        return Ok((code,json));
+    }
+
+    Ok((StatusCode::OK,Json(json!({"message":"Shorts fetched successfully","shorts":result.unwrap()}))))
+}
 
 pub async fn create_short(Extension(claim):Extension<Claims>, Json(req): Json<Value>,Extension(pool):Extension<Arc<DbPool>>)->Result<impl IntoResponse, StatusCode>{
     let mut conn=pool.get().expect("Failed to get database connection from pool");
