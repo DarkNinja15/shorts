@@ -44,13 +44,13 @@ pub async fn create_short(Extension(claim):Extension<Claims>, Json(req): Json<Va
 
     
 
-    let result=diesel::insert_into(shorts).values(&new_short).execute(&mut conn);
+    let result=diesel::insert_into(shorts).values(&new_short).execute(&mut conn).map_err(|_| {(StatusCode::INTERNAL_SERVER_ERROR,Json(json!({"error":"Unable to insert short in db."})))});
 
     tracing::debug!("result: {:?}", result);
 
-    // if let Err((code,json))=result{
-    //     return Ok((code,json));
-    // }
+    if let Err((code,json))=result{
+        return Ok((code,json));
+    }
     
     Ok((StatusCode::OK,Json(json!({"message":"Short created successfully","short":new_short}))))
 }
