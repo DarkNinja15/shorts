@@ -1,21 +1,16 @@
-use std::env;
 use std::sync::Arc;
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use bcrypt::{verify, DEFAULT_COST};
-use chrono::{Utc,Duration};
 use diesel::prelude::*;
-use jsonwebtoken::errors::Error;
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use crate::schema::users::dsl::*;
 
 
+use crate::utils::genrate_token;
 use crate::{db::DbPool, models::user::User};
-
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header};
 
 pub async fn signup(Json(user):Json<User>,Extension(pool): Extension<Arc<DbPool>>)->Result<impl IntoResponse, StatusCode>{
     let mut conn = pool.get().expect("Failed to get database connection from pool");
@@ -135,45 +130,4 @@ pub async fn login(Json(user): Json<Value>,Extension(pool):Extension<Arc<DbPool>
 
     Ok((StatusCode::OK,
         Json(json!({"message":"User logged in successfully","user":existing_user,"token":token.unwrap()}))))
-}
-
-#[derive(Debug, Serialize, Deserialize,Clone)]
-
-pub struct Claims {
-    pub sub: String,
-    pub exp: usize,
-}
-
-fn genrate_token(user_id:String)->Result<String,Error>{
-    let expiration = Utc::now()
-        .checked_add_signed(Duration::hours(24))   
-        .expect("valid timestamp")
-        .timestamp() as usize;
-
-    let claims = Claims {
-        sub: user_id,
-        exp: expiration,
-    };
-
-    let secret = env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-    
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(secret.as_ref())
-    )?;
-
-    Ok(token)
-}
-
-pub fn validate_token(token: &str)->Result<Claims, jsonwebtoken::errors::Error>{
-    let secret=env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-
-    let token_data=decode::<Claims>(
-        &token,
-        &DecodingKey::from_secret(secret.as_ref()),
-        &jsonwebtoken::Validation::default(),
-    )?;
-
-    Ok(token_data.claims)
 }

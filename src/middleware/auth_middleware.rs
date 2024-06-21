@@ -1,6 +1,7 @@
 use axum::{http::{Request, StatusCode}, middleware::Next, response::Response};
 
-use crate::handlers::user::validate_token;
+use crate::utils::validate_token;
+
 
 pub async fn auth_middleware<B>(mut request:Request<B>,next:Next<B>)->Result<Response,StatusCode>{
     let headers=request.headers();

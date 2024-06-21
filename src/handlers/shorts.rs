@@ -4,12 +4,11 @@ use std::sync::Arc;
 use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 use diesel::RunQueryDsl;
 use serde_json::{json, Value};
-use uuid::Uuid;
 use crate::schema::shorts::dsl::*;
 
 use crate::db::DbPool;
+use crate::utils::{get_uid, Claims};
 
-use super::user::Claims;
 
 pub async fn get_shorts(){}
 
@@ -31,11 +30,8 @@ pub async fn create_short(Extension(claim):Extension<Claims>, Json(req): Json<Va
         None=>return Ok((StatusCode::BAD_REQUEST,Json(json!({"error":"description is required"}))))
     };
 
-
-    let _id=Uuid::new_v4().to_string();
-
     let new_short=crate::models::shorts::Shorts{
-        id:_id.clone(),
+        id:get_uid().clone(),
         ref_url:_ref_url.to_string(),
         title:_title.to_string(),
         description:_description.to_string(),
