@@ -1,36 +1,56 @@
 
 use std::sync::Arc;
 
-use axum::{extract::Path, http::{HeaderMap, StatusCode}, response::IntoResponse, Extension, Json};
+use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+use diesel::RunQueryDsl;
 use serde_json::{json, Value};
+use uuid::Uuid;
+use crate::schema::shorts::dsl::*;
 
 use crate::db::DbPool;
 
 use super::user::Claims;
 
-pub async fn get_shorts(Extension(claim):Extension<Claims>){}
+pub async fn get_shorts(){}
 
-pub async fn create_short(Extension(claim):Extension<Claims>, Json(req): Json<Value>,Path(author):Path<String>,Extension(pool):Extension<Arc<DbPool>>,head:HeaderMap)->Result<impl IntoResponse, StatusCode>{
-    // print the headers
-    tracing::debug!("claims: {:?}", claim.sub);
-    
+pub async fn create_short(Extension(claim):Extension<Claims>, Json(req): Json<Value>,Extension(pool):Extension<Arc<DbPool>>)->Result<impl IntoResponse, StatusCode>{
     let mut conn=pool.get().expect("Failed to get database connection from pool");
 
-    let ref_url=match req.get("ref_url") {
+    let _ref_url=match req.get("ref_url") {
         Some(url)=>url.as_str().ok_or(StatusCode::BAD_REQUEST)?,
         None=>return Ok((StatusCode::BAD_REQUEST,Json(json!({"error":"ref_url is required"}))))
     };
 
-    let title=match req.get("title") {
+    let _title=match req.get("title") {
         Some(t)=>t.as_str().ok_or(StatusCode::BAD_REQUEST)?,
         None=>return Ok((StatusCode::BAD_REQUEST,Json(json!({"error":"title is required"}))))
     };
 
-    let description=match req.get("description") {
+    let _description=match req.get("description") {
         Some(d)=>d.as_str().ok_or(StatusCode::BAD_REQUEST)?,
         None=>return Ok((StatusCode::BAD_REQUEST,Json(json!({"error":"description is required"}))))
     };
 
 
-    Ok((StatusCode::OK,Json(json!({"message":"Short created successfully"}))))
+    let _id=Uuid::new_v4().to_string();
+
+    let new_short=crate::models::shorts::Shorts{
+        id:_id.clone(),
+        ref_url:_ref_url.to_string(),
+        title:_title.to_string(),
+        description:_description.to_string(),
+        author:claim.sub.clone()
+    };
+
+    
+
+    let result=diesel::insert_into(shorts).values(&new_short).execute(&mut conn);
+
+    tracing::debug!("result: {:?}", result);
+
+    // if let Err((code,json))=result{
+    //     return Ok((code,json));
+    // }
+    
+    Ok((StatusCode::OK,Json(json!({"message":"Short created successfully","short":new_short}))))
 }

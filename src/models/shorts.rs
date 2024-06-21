@@ -5,9 +5,9 @@ use crate::schema::shorts;
 #[derive(Queryable,Serialize,Deserialize,Insertable,Debug)]
 #[table_name="shorts"]
 pub struct Shorts{
-    id:String,
-    ref_url:String,
-    title:String,
-    description:String,
-    author:String,
+    pub id:String,
+    pub ref_url:String,
+    pub title:String,
+    pub description:String,
+    pub author:String,
 }
