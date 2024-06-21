@@ -13,10 +13,10 @@ syn = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 r2d2 = "0.8.9"
-tower = "0.4"
-tower-http = "0.1"
 bcrypt = "0.15.1"
 jsonwebtoken = "7.0.1"
+tide = "0.14.0"
+chrono = "0.4"
 
 [dependencies.regex]
 version = "1"
